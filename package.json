@@ -3,7 +3,6 @@
 	"version": "1.0.0",
 	"description": "NodeJS Challenge",
 	"main": "src/server.js",
-	"type": "module",
 	"scripts": {
 		"test": "NODE_OPTIONS=--experimental-vm-modules NODE_ENV=test jest --verbose --detectOpenHandles --forceExit",
 		"dev": "NODE_ENV=development nodemon --exec babel-node -r dotenv/config src/server.js",
@@ -89,24 +88,9 @@
 		"vueIndentScriptAndStyle": false
 	},
 	"babel": {
-		"env": {
-			"test": {
-				"presets": [
-					"@babel/preset-env",
-					{
-						"modules": "commonjs"
-					}
-				]
-			},
-			"production": {
-				"presets": [
-					"@babel/preset-env",
-					{
-						"modules": false
-					}
-				]
-			}
-		},
+		"presets": [
+			"@babel/preset-env"
+		],
 		"plugins": [
 			"@babel/plugin-transform-runtime",
 			[
