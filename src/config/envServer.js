@@ -15,4 +15,7 @@ export const mongo = {
 	db: process.env.MONGO_DB,
 }
 
-export const sentryDns = process.env.SENTRY_DNS || ''
+export const sentry = {
+	dsn: process.env.SENTRY_DSN || '',
+	id: process.env.SENTRY_ID || '',
+}

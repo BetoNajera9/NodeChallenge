@@ -1,23 +1,23 @@
 // Dependencies error handler
-import * as sentry from '@sentry/node'
+import * as Sentry from '@sentry/node'
+import '@sentry/tracing'
 
 // Other dependencies
-import { api, sentryDns } from '../../config/envServer.js'
+import { api, sentry } from '../../config/envServer.js'
+import response from '../network/response.js'
+import log from '../network/log.js'
 
 // Handler sentry configuration
-sentry.init({
-	dns: sentryDns,
+Sentry.init({
+	dns: sentry.dsn,
 	environment: api.env,
 	tracesSampleRate: 1.0,
 })
 
 // Error handler and send error data to sentry
 export const logErrors = (err, req, res, next) => {
-	sentry.captureException(err)
+	Sentry.captureException(err)
 
-	res.status(err.status).send({
-		error: true,
-		status: res.status,
-		message: err.message,
-	})
+	log.error(`[${err.name}]: ${err.message}`)
+	response.error(res, err.expose, err.status)
 }
