@@ -1,11 +1,13 @@
 import express from 'express'
-
-import { api } from '../config/envServer.js'
-import validationHandler from '../utils/middlewares/validationHandler.js'
-import * as user from '../utils/schema/userSchema.js'
 import UserService from '../services/user.js'
 import response from '../utils/network/response.js'
 import ServerError from '../utils/network/error.js'
+import { api } from '../config/envServer.js'
+import * as user from '../utils/schema/userSchema.js'
+import {
+	schemaValidationHandler,
+	paramsValidationHandler,
+} from '../utils/middlewares/validationHandler.js'
 
 const router = new express.Router()
 const userService = new UserService()
@@ -19,78 +21,61 @@ router.get('/', async (req, res, next) => {
 	})
 })
 
-router.get('/user/:ids', async (req, res, next) => {
-	try {
-		let success = []
-		const ids = req.params.ids.split(',')
-		const idsInt = await Promise.all(
-			ids.map(async (id) => {
-				if (isNaN(id)) {
-					throw new ServerError(
-						'Need to check the parameter',
-						400,
-						'InvalidParameter',
-						'InvalidParameter'
-					)
-				}
-				const external = await userService.externalGetUser(id)
-				if (!external) {
-					return parseInt(id)
-				}
-				success.push(external.data)
-			})
-		)
-
-		const data = await userService.getUser(idsInt)
-
-		if (data) {
-			success = [...data, ...success]
-		}
-		if (!success.length) {
-			throw new ServerError(
-				'User not found',
-				400,
-				'UserNotFound',
-				'UserNotFound'
+router.get(
+	'/user/:ids',
+	paramsValidationHandler(user.idsUser, 'ids'),
+	async (req, res, next) => {
+		try {
+			let success = []
+			const ids = req.params.ids.split(',')
+			const idsInt = await Promise.all(
+				ids.map(async (id) => {
+					const external = await userService.externalGetUser(id)
+					if (!external) {
+						return parseInt(id)
+					}
+					success.push(external.data)
+				})
 			)
-		} else if (ids.length !== success.length) {
-			response.succes(
-				res,
-				`WARNING: Success response with warning`,
-				success,
-				206
-			)
-		} else {
-			response.succes(res, `User ${ids} obtained`, success)
+
+			const data = await userService.getUser(idsInt)
+
+			if (data) {
+				success = [...data, ...success]
+			}
+			if (!success.length) {
+				throw new ServerError(
+					'User not found',
+					400,
+					'UserNotFound',
+					'UserNotFound'
+				)
+			} else if (ids.length !== success.length) {
+				response.succes(
+					res,
+					`WARNING: Success response with warning`,
+					success,
+					206
+				)
+			} else {
+				response.succes(res, `User ${ids} obtained`, success)
+			}
+		} catch (err) {
+			next(err)
 		}
-	} catch (err) {
-		next(err)
 	}
-})
+)
 
 router.post(
 	'/user/:id',
-	validationHandler(user.newUser),
+	paramsValidationHandler(user.idUser, 'id'),
+	schemaValidationHandler(user.newUser),
 	async (req, res, next) => {
 		try {
-			if (req.params.id && !isNaN(req.params.id)) {
-				const data = { _id: parseInt(req.params.id), ...req.body }
-				await userService.setUser(data)
+			const data = { _id: parseInt(req.params.id), ...req.body }
+			await userService.setUser(data)
 
-				response.succes(
-					res,
-					`User ${req.body.first_name} was create`,
-					data,
-					201
-				)
-			} else {
-				throw new ServerError(
-					'Need to check the parameter',
-					400,
-					'InvalidParameter',
-					'InvalidParameter'
-				)
-			}
+			response.succes(res, `User ${req.body.first_name} was create`, data, 201)
 		} catch (err) {
 			next(err)
 		}
@@ -99,47 +84,34 @@ router.post(
 
 router.put(
 	'/user/:id',
-	validationHandler(user.updateUser),
+	paramsValidationHandler(user.idUser, 'id'),
+	schemaValidationHandler(user.updateUser),
 	async (req, res, next) => {
 		try {
-			if (!isNaN(req.params.id)) {
-				const data = await userService.updateUser(
-					req.body,
-					parseInt(req.params.id)
-				)
+			const data = await userService.updateUser(
+				req.body,
+				parseInt(req.params.id)
+			)
 
-				response.succes(res, `User ${req.params.id} updated`, data)
-			} else {
-				throw new ServerError(
-					'Need to check the parameter',
-					400,
-					'InvalidParameter',
-					'InvalidParameter'
-				)
-			}
+			response.succes(res, `User ${req.params.id} updated`, data)
 		} catch (err) {
 			next(err)
 		}
 	}
 )
 
-router.delete('/user/:id', async (req, res, next) => {
-	try {
-		if (!isNaN(req.params.id)) {
+router.delete(
+	'/user/:id',
+	paramsValidationHandler(user.idUser, 'id'),
+	async (req, res, next) => {
+		try {
 			const data = await userService.deleteUser(parseInt(req.params.id))
 
 			response.succes(res, `User ${req.params.id} deleted`, data)
-		} else {
-			throw new ServerError(
-				'Need to check the parameter',
-				400,
-				'InvalidParameter',
-				'InvalidParameter'
-			)
+		} catch (err) {
+			next(err)
 		}
-	} catch (err) {
-		next(err)
 	}
-})
+)
 
 export default router

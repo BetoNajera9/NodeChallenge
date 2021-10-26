@@ -1,24 +1,50 @@
 import log from '../network/log.js'
-import ErrorReq from '../network/error.js'
+import ServerError from '../network/error.js'
 
-// validation schema on scope
 const validate = (data, schema) => {
 	try {
-		const { error } = schema.validate(data)
-		return error
+		const val = schema.validate(data)
+		return val.error
 	} catch ({ message }) {
 		log.error(message)
 	}
 }
 
-// validation error, if it differs of validation schema
-const validationHandler = (schema, check = 'body') => {
+export const schemaValidationHandler = (schema, check = 'body') => {
 	return (req, res, next) => {
 		const error = validate(req[check], schema)
 		error
-			? next(new ErrorReq(error.message, 400, 'invalidJSON', 'invalidJSON'))
+			? next(new ServerError(error.message, 400, 'invalidJSON', 'invalidJSON'))
 			: next()
 	}
 }
 
-export default validationHandler
+export const paramsValidationHandler = (
+	schema,
+	check,
+	parameter = 'params'
+) => {
+	return (req, res, next) => {
+		if (!req[parameter][check])
+			next(
+				new ServerError(
+					'Verify parameters',
+					400,
+					'InvalidParameter',
+					'InvalidParameter'
+				)
+			)
+
+		const error = validate(req[parameter][check], schema)
+		error
+			? next(
+					new ServerError(
+						error.message,
+						400,
+						'InvalidParameter',
+						'InvalidParameter'
+					)
+			  )
+			: next()
+	}
+}

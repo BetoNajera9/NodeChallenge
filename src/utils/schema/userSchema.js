@@ -17,3 +17,9 @@ export const updateUser = joi.object({
 	url: joi.string().domain(),
 	text: joi.string(),
 })
+
+const regexId = '[0-9]+'
+const regexIds = `${regexId}(,[0-9]+)+`
+
+export const idsUser = joi.string().regex(new RegExp(regexIds))
+export const idUser = joi.string().regex(new RegExp(regexId))
