@@ -2,7 +2,7 @@ import express from 'express'
 import cors from 'cors'
 
 import { api } from './config/envServer.js'
-// import routes from './routes'
+import routes from './routes/index.js'
 import { logErrors } from './utils/middlewares/errorsHandler.js'
 
 const app = express()
@@ -24,7 +24,7 @@ if (api.env !== 'production') {
 app.get('/', (req, res, next) => {
 	res.redirect('/api')
 })
-// app.use('/api', routes)
+app.use('/api', routes)
 
 // Handler Error
 app.use(logErrors)
@@ -32,7 +32,9 @@ app.use(logErrors)
 if (api.env !== 'test') {
 	app.listen(api.port, (err) => {
 		if (err) console.error(err)
-		else console.log(`=> Server on port ${api.port}`)
+		else if (api.env !== 'production')
+			console.log(`=> Server on http://localhost:${api.port}`)
+		else console.log(`=> Server on ${api.server}`)
 	})
 }
 

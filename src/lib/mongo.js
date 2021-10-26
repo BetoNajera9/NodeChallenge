@@ -1,8 +1,8 @@
-import { MongoClient, ObjectId } from 'mongodb'
+import { MongoClient } from 'mongodb'
 
 import { mongo } from '../config/envServer.js'
 import ServerError from '../utils/network/error.js'
-import Response from '../utils/network/log.js'
+import log from '../utils/network/log.js'
 
 const USER = encodeURIComponent(mongo.user)
 const PASSWORD = encodeURIComponent(mongo.password)
@@ -20,55 +20,35 @@ export default class MongoLib {
 		try {
 			if (!MongoLib.connection) {
 				await this.client.connect()
-				Response.info(`Connected succesfully to ${this.dbName}`)
+				log.success(`Connected succesfully to ${this.dbName}`)
 				MongoLib.connection = this.client.db(this.dbName)
 			}
 			return MongoLib.connection
 		} catch ({ message }) {
-			throw new ServerError('Error connection').response()
+			log.error(message)
+			throw new ServerError(message, 500)
 		}
 	}
 
 	async get(collection, query = {}, projection = {}) {
-		try {
-			const db = await this.connect()
-			return await db
-				.collection(collection)
-				.find(query, { projection })
-				.toArray()
-		} catch ({ message }) {
-			throw new ServerError('Error query get').response()
-		}
+		const db = await this.connect()
+		return await db.collection(collection).find(query, { projection }).toArray()
 	}
 
 	async create(collection, data) {
-		try {
-			const db = await this.connect()
-			return await db.collection(collection).insertOne(data)
-		} catch ({ message }) {
-			throw new ServerError('Error query create').response()
-		}
+		const db = await this.connect()
+		return await db.collection(collection).insertOne(data)
 	}
 
 	async update(collection, data, id) {
-		try {
-			const db = await this.connect()
-			console.log(data)
-			return await db
-				.collection(collection)
-				.updateOne({ _id: ObjectId(id) }, { $set: data }, { upsert: false })
-		} catch ({ message }) {
-			console.log(message)
-			throw new ServerError('error query update').response(message)
-		}
+		const db = await this.connect()
+		return await db
+			.collection(collection)
+			.updateOne({ _id: id }, { $set: data }, { upsert: false })
 	}
 
 	async delete(collection, id) {
-		try {
-			const db = await this.connect()
-			return await db.collection(collection).deleteOne({ _id: ObjectId(id) })
-		} catch ({ message }) {
-			throw new ServerError('error query delete').response(message)
-		}
+		const db = await this.connect()
+		return await db.collection(collection).deleteOne({ _id: id })
 	}
 }
