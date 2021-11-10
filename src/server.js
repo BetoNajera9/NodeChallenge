@@ -9,7 +9,6 @@ const app = express()
 
 // Middlewares
 if (api.env !== 'production') {
-	app.use(express.json())
 	app.use(cors('*'))
 } else {
 	const helmet = require('helmet')
@@ -19,6 +18,7 @@ if (api.env !== 'production') {
 	app.use(helmet.permittedCrossDomainPolicies())
 	app.disable('x-powered-by')
 }
+app.use(express.json())
 
 // Routes
 app.get('/', (req, res, next) => {
